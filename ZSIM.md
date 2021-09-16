@@ -1,8 +1,76 @@
 # ZSIM
 
+## 核模型
+
+三种支持的核结构：
+
+- 简单IPC1核
+- 时序核
+- 乱序核（OOO）
+
+用4种分析方法来模拟程序：
+
+- 基础块（BBL）（mov, add, ja）
+- load
+- store
+- branch分支
+
+没有实现的：
+
+- 错误路径预测
+  - 对于Pin来说难以实现
+  - 对Westmere来说可以略过
+- 细粒度消息传递
+  - 需要大量修改
+- TLB和SMT
+  - 暂不支持
+
+用指令驱动的方式仿真核行为，用事件驱动的方式仿真非核行为。
+
+**扩展核模型的几个步骤：**
+
+1. 修改4种分析方法
+2. 用自己实现的硬件结构替换掉原来的
+3. 修改ooo中的参数
+
+#### 编程实例
+
+1. 实现乱序核的分支预测
+
+   > 1. 实现一个新的分支预测类和预测方法
+   >
+   >    ```c++
+   >    class GShareBranchPredictor {
+   >    	private:
+   >        	bool lastSeen;
+   >        public:
+   >    		// Predicts and updates; returns false if mispredicted            
+   >        	inline bool predict(Address branchPc, bool taken) {
+   >                bool prediction = (taken == lastSeen);
+   >                lastSeen = taken;
+   >                return prediction; // always predict taken
+   >            }
+   >    }
+   >    ```
+   >
+   > 2. 替换掉ooo_core.h中原本的分支预测器
+   >
+   >    ```C++
+   >    //BranchPredictorPAg<11, 18, 14> branchPred;
+   >    GSharePredictor branchPred;
+   >    ```
+
+2. 改变乱序核的类型
+
+   > 如何模拟其他体系结构的乱序核？
+   >
+   > 1. 获取重要的乱序核参数
+   > 2. 改写ooo_core.h/cpp中的核参数
+   > 3. 验证
+
 ## 内存系统
 
-![image-20210913213948701](C:\Users\58253\AppData\Roaming\Typora\typora-user-images\image-20210913213948701.png)
+![image-20210914090838447](C:\Users\CGCL\AppData\Roaming\Typora\typora-user-images\image-20210914090838447.png)
 
 ### 内存系统设计
 
@@ -13,7 +81,7 @@
 3. 一路访问到公共cache，此时向另外一个核发送InvReq, 阻塞其他核的访存
 4. MemReq查找cache，访存和替换cache。
 
-![image-20210914000807549](C:\Users\58253\AppData\Roaming\Typora\typora-user-images\image-20210914000807549.png)
+![image-20210914090906433](C:\Users\CGCL\AppData\Roaming\Typora\typora-user-images\image-20210914090906433.png)
 
 #### 重要的类
 
@@ -146,8 +214,8 @@ public:
 
 主存模型的三种类型：
 
-- 简单内存：固定延迟，无争用
-- MD1内存：用M/D/1队列的争用模型
+- 简单内存：固定延迟，无冲突
+- MD1内存：用M/D/1队列的冲突模型
 - DDR内存和DRAMSim内存：详细的DDR时序模型
 
 并发控制：
@@ -177,7 +245,7 @@ uint64_t Cache::invalidate(InvReq& req)
 }
 ```
 
-![image-20210913225658860](C:\Users\58253\AppData\Roaming\Typora\typora-user-images\image-20210913225658860.png)
+![image-20210914090937564](C:\Users\CGCL\AppData\Roaming\Typora\typora-user-images\image-20210914090937564.png)
 
 实现LRU
 
