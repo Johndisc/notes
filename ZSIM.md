@@ -70,7 +70,7 @@
 
 ## 内存系统
 
-![image-20210914090838447](C:\Users\CGCL\AppData\Roaming\Typora\typora-user-images\image-20210914090838447.png)
+![image-20210917092737150](D:\notes\assets\ZSIM\image-20210917092737150.png)
 
 ### 内存系统设计
 
@@ -81,7 +81,7 @@
 3. 一路访问到公共cache，此时向另外一个核发送InvReq, 阻塞其他核的访存
 4. MemReq查找cache，访存和替换cache。
 
-![image-20210914090906433](C:\Users\CGCL\AppData\Roaming\Typora\typora-user-images\image-20210914090906433.png)
+![image-20210917092710782](D:\notes\assets\ZSIM\image-20210917092710782.png)
 
 #### 重要的类
 
@@ -245,7 +245,7 @@ uint64_t Cache::invalidate(InvReq& req)
 }
 ```
 
-![image-20210914090937564](C:\Users\CGCL\AppData\Roaming\Typora\typora-user-images\image-20210914090937564.png)
+![image-20210917092637887](D:\notes\assets\ZSIM\image-20210917092637887.png)
 
 实现LRU
 
