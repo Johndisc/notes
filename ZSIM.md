@@ -267,3 +267,22 @@ uint64_t Cache::invalidate(InvReq& req)
 
 ```
 
+
+
+# 代码
+
+### cache（ooo_core.h)
+
+```
+声明：
+FilterCache* l1i;
+FilterCache* l1d;
+l1d->load()
+l1d->store()
+```
+
+### init.h
+
+> cache:
+> 一个cache组分为多个cache，每个cache又分为多个bank，每个bank 为一个cache对象
+
