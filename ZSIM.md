@@ -286,3 +286,25 @@ l1d->store()
 > cache:
 > 一个cache组分为多个cache，每个cache又分为多个bank，每个bank 为一个cache对象
 
+#### 进程线程相关
+
+```
+pid						进程号(linux)
+tid						线程号
+cid						上下文id
+procIdx					当前进程在zsim中的id
+zinfo->numProcs			总进程数
+zinfo->procArray[]		所有进程的进程树节点，数组
+fPtrs[]					储存每个线程的指令处理函数，包括load，store，bbl，分支，预测读，预测写等函数
+gid=(pid << 16) | tid
+
+int到ThreadInfo*的映射，储存每个gid对应的ThreadInfo。
+gidMap[gid] = ThreadInfo(gid, syscall(SYS_getpid), syscall(SYS_gettid), mask);
+
+
+```
+
+1. 用pin将线程开始时间与ThreadStart绑定
+2. `ThreadStart---->SimThreadStart`
+3. `SimThreadStart---->zinfo->sched->start(procIdx, tid, procTreeNode->getMask())`
+4. `start---->gidMap[gid]=ThreadInfo(gid,syscall(SYS_getpid),syscall(SYS_gettid),mask);`
