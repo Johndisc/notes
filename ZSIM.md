@@ -308,3 +308,21 @@ gidMap[gid] = ThreadInfo(gid, syscall(SYS_getpid), syscall(SYS_gettid), mask);
 2. `ThreadStart---->SimThreadStart`
 3. `SimThreadStart---->zinfo->sched->start(procIdx, tid, procTreeNode->getMask())`
 4. `start---->gidMap[gid]=ThreadInfo(gid,syscall(SYS_getpid),syscall(SYS_gettid),mask);`
+
+#### main流程
+
+1. `PIN_InitSymbols()`+`PIN_Init()`初始化PIN
+2. `SimInit()`初始化仿真系统
+3. `getLibzsimAddrs()`设置地址
+4. 初始化`fPtrs[i] = joinPtrs; cids[i] = UNINITIALIZED_CID;`joinPtrs为初始执行函数指针，在调用时转化为特定核的执行函数指针。
+5. 把指令处理函数`Trace`绑定到程序指令上
+6. 把线程处理函数`ThreadStart`和`ThreadFini`绑定到线程上
+7. 把进程处理函数`FollowChild`，`BeforeFork`，`AfterForkInParent`，`AfterForkInChild`绑定到进程上
+8. `PIN_StartProgram`启动程序
+
+#### 指令处理函数Trace
+
+1. 遍历执行程序的每个BBL，对每条指令执行`Instruction(ins)`函数
+2. 在`Instruction(ins)`中，用PIN的API判断指令类型，读写分支等，然后调用对应的`fPtrs[tid]`中的函数。
+3. 在这些函数中首先调用`join`函数，通过pid和tid获取gid，再获取gidMap中的线程信息，获取其中的cid。再通过cid获取zinfo->cores[]中该tid对应的核，将该核的指令处理函数指针存入fPtrs。最后调用该指令的指令处理函数，执行指令。
+
