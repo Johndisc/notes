@@ -18,7 +18,7 @@ zsim会将一条指令分解为多条微指令，例如store指令包括地址�
 
 ### Architectural and Temporary Registers
 
-结构寄存器由PIN提供，从(REG_LAST + 1) 开始为临时寄存器。
+结构寄存器由PIN提供，从(REG_LAST + 1) 开始为临时寄存器。结构寄存器储存指令的源操作数和目的操作数，临时寄存器储存微指令的源操作数和目的操作数。
 
 ### Pre-processed Instructions
 
