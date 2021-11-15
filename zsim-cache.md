@@ -42,4 +42,72 @@ tag数组为一维地址数组，必须继承自`CacheArray`类，提供3个方�
 
   给定地址和位置索引，将地址储存到目标位置。
 
+  ### cache构建
   
+  构建cache时，每一级cache对应一个`typedef vector<vector<BaseCache*>> CacheGroup`对象，即一个`BaseCache`的二维数组，调用`BuildCacheGroup`进行创建。其中，每个cache有caches行，banks列个bank，每个bank调用`BuildCacheBank`进行创建。
+  
+  ```c++
+  CacheGroup* cgp = new CacheGroup;
+  CacheGroup& cg = *cgp;
+  
+  uint32_t bankSize = size/banks;
+  
+  cg.resize(caches);
+  for (vector<BaseCache*>& bg : cg) bg.resize(banks);
+  
+  cg[i][j] = BuildCacheBank(config, prefix, bankName, bankSize, isTerminal, domain);
+  ```
+  
+  每个bank又分为`numLines`行，每个bank构造一个CacheArray对象，一个CC对象，最后构造一个Cache对象。
+  
+  ```c++
+  uint32_t numLines = bankSize/lineSize;
+  uint32_t numHashes = 1;
+  uint32_t numSets = numLines/ways;
+  ReplPolicy* rp = new LRUReplPolicy<true>(numLines);
+  CacheArray* array = new SetAssocArray(numLines, ways, rp, hf);
+  
+  Cache* cache;
+  CC* cc;
+  if (isTerminal)
+  	cc = new MESITerminalCC(numLines, name);
+  else
+  	cc = new MESICC(numLines, nonInclusiveHack, name);
+  rp->setCC(cc);
+  
+  cache = new Cache(numLines, cc, array, rp, accLat, invLat, name);
+  ```
+  
+  ![image-20211105101730542](D:\notes\assets\zsim-cache\image-20211105101730542.png)
+  
+  **连接parent和children**
+  
+  以每个bank为单位设置其parent，而`BaseCache`中的`setParents`其实就是CC的`setParents`。
+  
+  ```
+  BaseCache->setParents(childId++, mems, network);
+  
+  void Cache::setParents(uint32_t childId, const g_vector<MemObject*>& parents, Network* network) {
+      cc->setParents(childId, parents, network);
+  }
+  ```
+  
+  除了l1i和lid之外，其他级的cache的CC都是`MESICC`类型。该类有一个`MESITopCC`和一个`MESIBottomCC`对象，分别对应该级cache的children和parent。`MESITopCC`有一个`children`数组，`MESIBottomCC`有一个`parent`数组。在设置parent和children时，就构建这两个对象并初始化，将parents或children数组拷贝到`MESITopCC`或`MESIBottomCC`的对应数组中。
+  
+  ```
+  MESITopCC* tcc;
+  MESIBottomCC* bcc;
+  
+  void setParents(uint32_t childId, const g_vector<MemObject*>& parents, Network* network) {
+  	bcc = new MESIBottomCC(numLines, childId, nonInclusiveHack);
+  	bcc->init(parents, network, name.c_str());
+  }
+  
+  void setChildren(const g_vector<BaseCache*>& children, Network* network) {
+  	tcc = new MESITopCC(numLines, nonInclusiveHack);
+  	tcc->init(children, network, name.c_str());
+  }
+  ```
+  
+  
+
