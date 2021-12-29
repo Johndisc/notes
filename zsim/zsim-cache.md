@@ -109,5 +109,28 @@ tag数组为一维地址数组，必须继承自`CacheArray`类，提供3个方�
   }
   ```
   
+  ### 淘汰
   
-
+  1. 结果为-1，找不到
+  
+     `int32_t lineId = array->lookup(req.lineAddr, &req, updateReplacement);`
+  
+  2. 找一个替换的地址，储存lineId，其地址存在wbLineAddr中
+  
+     `lineId = array->preinsert(req.lineAddr, &req, &wbLineAddr);`
+  
+  3. 对wbLineAddr中的地址进行淘汰
+  
+     `cc->processEviction(req, wbLineAddr, lineId, respCycle)`
+  
+  4. 如果其状态为I，则无视；如果为S或E，说明该地址的最新数据已储存到父级cache或其他cache中，则啥都不用干；如果为M，则需要将其写入父级cache
+  
+     `respCycle = parents[getParentId(wbLineAddr)]->access(req);`
+  
+  5. 由于是inclusive，该地址在父级cache中一定能找到，对于上述最后一种情况，将父级cache中其状态改为M即可。
+  
+  6. 回到子级cache，将新地址覆写到淘汰掉的line上。
+  
+     `array->postinsert(req.lineAddr, &req, lineId);`
+  
+  
